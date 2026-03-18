@@ -1,0 +1,79 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">QuickCat logo</title>
+  <desc id="desc">QuickCat brand logo featuring a cat head, magnifying glass, open book, and blue gradient wordmark with motion lines.</desc>
+  <defs>
+    <linearGradient id="qcGradient" x1="240" y1="180" x2="810" y2="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2530A8"/>
+      <stop offset="0.42" stop-color="#1B58B5"/>
+      <stop offset="1" stop-color="#29DFFF"/>
+    </linearGradient>
+    <linearGradient id="qcPurple" x1="194" y1="224" x2="530" y2="540" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2B2F9C"/>
+      <stop offset="1" stop-color="#6B29D7"/>
+    </linearGradient>
+    <linearGradient id="qcWordDark" x1="190" y1="800" x2="575" y2="800" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#14337F"/>
+      <stop offset="1" stop-color="#173B90"/>
+    </linearGradient>
+    <linearGradient id="qcWordLight" x1="575" y1="800" x2="864" y2="800" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1DBBFF"/>
+      <stop offset="1" stop-color="#31EEFF"/>
+    </linearGradient>
+    <filter id="blurStreak" x="35" y="630" width="260" height="120" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+    <filter id="shadow" x="120" y="120" width="780" height="780" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#183A87" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" fill="#FFFFFF"/>
+
+  <g filter="url(#shadow)">
+    <g stroke-linecap="round" fill="none">
+      <path d="M359 271C430 194 535 162 640 183C711 196 775 234 825 288" stroke="url(#qcGradient)" stroke-width="10"/>
+      <path d="M818 329C846 391 853 466 837 537C821 606 784 668 731 717" stroke="url(#qcGradient)" stroke-width="10"/>
+      <path d="M319 681C370 737 440 775 517 790C596 805 676 794 744 760" stroke="url(#qcGradient)" stroke-width="10"/>
+    </g>
+
+    <g stroke-linecap="round">
+      <path d="M201 345H422" stroke="url(#qcGradient)" stroke-width="24"/>
+      <path d="M184 395H374" stroke="url(#qcGradient)" stroke-width="24"/>
+      <path d="M214 446H407" stroke="url(#qcGradient)" stroke-width="24"/>
+      <path d="M147 345H166" stroke="url(#qcGradient)" stroke-width="24"/>
+      <path d="M131 446H150" stroke="url(#qcGradient)" stroke-width="24"/>
+      <path d="M232 498H323" stroke="url(#qcPurple)" stroke-width="18"/>
+    </g>
+
+    <path d="M495 267L548 187L571 266L625 223L640 300L733 360L751 437L698 513L627 533L580 596L541 542L462 497L468 414L437 350L495 267Z" fill="url(#qcGradient)"/>
+    <path d="M548 187L571 266L539 295L495 267L548 187Z" fill="#15378F"/>
+    <path d="M625 223L640 300L599 284L625 223Z" fill="#2437A0"/>
+    <path d="M580 596L541 542L539 427L580 379L627 533L580 596Z" fill="#263AA8" fill-opacity="0.9"/>
+    <path d="M468 414L437 350L495 267L548 302L468 414Z" fill="#2A2E9E" fill-opacity="0.92"/>
+    <path d="M548 302L599 284L733 360L751 437L698 513L627 533L580 379L548 302Z" fill="#22A6DF" fill-opacity="0.72"/>
+
+    <path d="M621 371L691 418L644 428L649 479L621 371Z" fill="#FFFFFF" fill-opacity="0.98"/>
+    <path d="M632 389L673 417L649 423L652 451L632 389Z" fill="#2B57CA"/>
+
+    <path d="M442 528L545 626H442V528Z" stroke="url(#qcGradient)" stroke-width="9" stroke-linejoin="round" fill="none"/>
+    <path d="M455 626V548L531 626" stroke="url(#qcGradient)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <circle cx="609" cy="561" r="44" stroke="url(#qcGradient)" stroke-width="11"/>
+    <circle cx="609" cy="561" r="27" stroke="#16398E" stroke-width="9"/>
+    <path d="M656 607L719 669" stroke="url(#qcGradient)" stroke-width="18" stroke-linecap="round"/>
+    <path d="M640 534V587" stroke="url(#qcGradient)" stroke-width="10" stroke-linecap="round"/>
+  </g>
+
+  <g filter="url(#blurStreak)" opacity="0.35">
+    <path d="M45 694H256" stroke="url(#qcWordDark)" stroke-width="20" stroke-linecap="round"/>
+    <path d="M58 720H249" stroke="url(#qcWordDark)" stroke-width="18" stroke-linecap="round"/>
+  </g>
+
+  <path d="M73 694H249" stroke="url(#qcWordDark)" stroke-width="18" stroke-linecap="round"/>
+  <path d="M90 720H232" stroke="url(#qcWordDark)" stroke-width="16" stroke-linecap="round" opacity="0.88"/>
+
+  <g font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-style="italic" font-weight="700" text-anchor="middle">
+    <text x="468" y="811" font-size="126" fill="url(#qcWordDark)">Quick</text>
+    <text x="721" y="811" font-size="126" fill="url(#qcWordLight)">Cat</text>
+  </g>
+</svg>

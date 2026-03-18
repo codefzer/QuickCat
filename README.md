@@ -1,5 +1,11 @@
 # QuickCat — AI-Enhanced Metadata Agent
 
+<p align="center">
+  <img src="assets/quickcat-logo.svg" alt="QuickCat logo" width="460" />
+</p>
+
+<p align="center"><sub>Canonical repository logo: <code>assets/quickcat-logo.svg</code></sub></p>
+
 Modular AI Agent Toolbox for professional library cataloging. QuickCat automates the mechanical aspects of cataloging (harvesting, cleaning, validation) while augmenting the intellectual aspects (original cataloging, summary generation, authority grounding).
 
 Built as a collection of Claude skills — each skill is a focused, self-contained unit with its own SKILL.md, scripts, references, and assets.
