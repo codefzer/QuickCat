@@ -18,11 +18,11 @@ import pymarc
 ROOT = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(ROOT))
 import quickcat_loader                    # noqa: F401  – registers shared-resources aliases
-quickcat_loader.register_batch_cleaner()  # registers batch_clean on demand
-quickcat_loader.register_marc_importer()  # registers excel_to_marc on demand (pulls pandas)
+quickcat_loader.register_batch_cleaner()  # registers batch_clean on demand (both paths need it)
 
-from skills.marc_importer.scripts.excel_to_marc import excel_to_records  # noqa: E402
 from skills.batch_cleaner.scripts.batch_clean import clean_record, _load_profile  # noqa: E402
+# NOTE: excel_to_marc (and pandas) is imported lazily inside main() — only when the
+# input is actually an Excel/CSV file.  See the register_marc_importer() call below.
 
 
 def _load_validation_rules() -> dict:
@@ -84,6 +84,8 @@ def main():
     suffix = input_path.suffix.lower()
 
     if suffix in (".xlsx", ".xlsm", ".csv"):
+        quickcat_loader.register_marc_importer()  # deferred — pulls pandas only when needed
+        from skills.marc_importer.scripts.excel_to_marc import excel_to_records  # noqa: E402
         print(f"[import] Excel/CSV mode: {input_path.name}")
         records, raw_report = excel_to_records(str(input_path), args.material_type)
         print(f"[import] Parsed {len(records)} rows")
