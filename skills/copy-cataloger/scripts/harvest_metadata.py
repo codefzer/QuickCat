@@ -27,6 +27,11 @@ def _load_config() -> dict:
         return json.load(f)
 
 
+def _load_servers() -> dict:
+    with open(ROOT / "servers.json") as f:
+        return json.load(f)
+
+
 # ─── SRU harvest ─────────────────────────────────────────────────────────────
 
 async def _sru_query(server: dict, query: str, timeout: int) -> str:
@@ -131,7 +136,7 @@ async def harvest_metadata(identifier: str, source_key: str) -> str:
         'Record Not Found', 'Protocol Timeout', 'Authentication Failure'
     """
     cfg = _load_config()
-    servers = cfg.get("servers", {})
+    servers = _load_servers()
     if source_key not in servers:
         return f"Authentication Failure: unknown source_key {source_key!r}"
 
@@ -181,8 +186,8 @@ def main():
 
     if args.test:
         print("[harvest_metadata] --test: verifying config.json loads...")
-        cfg = _load_config()
-        print(f"  Configured sources: {list(cfg['servers'].keys())}")
+        _load_config()
+        print(f"  Configured sources: {list(_load_servers().keys())}")
         print("  OK")
         return
 

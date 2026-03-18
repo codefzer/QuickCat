@@ -1,10 +1,5 @@
 {
-  "servers": {
-    "loc":  { "type": "SRU",   "url": "https://lx2.loc.gov/sru/authorities", "database": "lcdb" },
-    "bl":   { "type": "Z3950", "host": "z3950.bl.uk",    "port": 9909, "database": "BNB" },
-    "nls":  { "type": "Z3950", "host": "z3950.nls.uk",   "port": 210,  "database": "JANUS" },
-    "oclc": { "type": "Z3950", "host": "z3950.oclc.org", "port": 210,  "database": "WorldCat" }
-  },
+  "servers_file": "servers.json",
   "search": {
     "bib1_isbn":   { "use": 7, "relation": 3, "structure": 2, "completeness": 3 },
     "bib1_title":  { "use": 4, "relation": 3, "structure": 6, "completeness": 1 },

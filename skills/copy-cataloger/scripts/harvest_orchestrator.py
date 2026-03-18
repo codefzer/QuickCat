@@ -37,6 +37,11 @@ def _load_config() -> dict:
         return json.load(f)
 
 
+def _load_servers() -> dict:
+    with open(ROOT / "servers.json") as f:
+        return json.load(f)
+
+
 def _apply_merge(
     base_record: pymarc.Record,
     reference_record: pymarc.Record,
@@ -99,7 +104,7 @@ async def orchestrate(
 
     # 2. Parallel harvest
     if not sources:
-        sources = list(cfg["servers"].keys())
+        sources = list(_load_servers().keys())
 
     print(f"[orchestrator] Harvesting from: {sources}")
     tasks = [harvest_metadata(identifier, src) for src in sources]

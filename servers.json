@@ -1,0 +1,6 @@
+{
+  "loc":  { "type": "SRU",   "url": "https://lx2.loc.gov/sru/authorities", "database": "lcdb" },
+  "bl":   { "type": "Z3950", "host": "z3950.bl.uk",    "port": 9909, "database": "BNB" },
+  "nls":  { "type": "Z3950", "host": "z3950.nls.uk",   "port": 210,  "database": "JANUS" },
+  "oclc": { "type": "Z3950", "host": "z3950.oclc.org", "port": 210,  "database": "WorldCat" }
+}
