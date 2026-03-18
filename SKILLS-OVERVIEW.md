@@ -1,5 +1,9 @@
 # QuickCat: AI-Enhanced Metadata Agent
 
+<p align="center">
+  <img src="assets/quickcat-logo.svg" alt="QuickCat logo" width="320" />
+</p>
+
 Modular AI Agent Toolbox for professional library cataloging. Automates the
 mechanical aspects of cataloging (harvesting, cleaning, validation) while
 augmenting the intellectual aspects (original cataloging, summary generation,
