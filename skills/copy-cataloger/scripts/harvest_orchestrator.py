@@ -24,7 +24,8 @@ import pymarc
 
 ROOT = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(ROOT))
-import quickcat_loader          # noqa: F401  – registers cross-package import aliases
+import quickcat_loader                  # noqa: F401  – registers shared-resources + copy-cataloger base aliases
+quickcat_loader.register_tie_breaker()  # registers resolve_tie_breaker on demand
 
 from skills.copy_cataloger.scripts.validation_gate import validate_isbn13, validate_lccn, detect_material_type  # noqa: E402
 from skills.copy_cataloger.scripts.harvest_metadata import harvest_metadata  # noqa: E402
