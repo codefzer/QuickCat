@@ -216,7 +216,7 @@ python3 skills/marc-importer/scripts/import_pipeline.py input.mrc --out output.m
 
 # With validation profile
 python3 skills/marc-importer/scripts/import_pipeline.py input.mrc \
-  --profile shared-resources/profiles/default.json
+  --profile skills/batch-cleaner/assets/default-profile.json
 
 # Check startup overhead for lightweight operations
 python3 skills/marc-importer/scripts/import_pipeline.py sample.mrc
@@ -262,26 +262,28 @@ git push origin feature/my-feature
 
 **Gotcha**: Code at module level in shared modules runs every time the module is loaded.
 
-**Solution**: Defer heavy operations to function level or lazy-load via `register_*()` helpers. Example:
+**Solution**: Isolate heavy imports behind `register_*()` helpers so unrelated scripts don't pay the cost. Example:
 
 ```python
-# ❌ BAD: httpx imported at module level
-import httpx  # All scripts pay this cost
+# harvest_metadata.py imports httpx at module level — this is fine,
+# but quickcat_loader defers its registration so only scripts that
+# call register_copy_cataloger() load it.
 
-# ✅ GOOD: Register on demand
-# In harvest_metadata.py, httpx imported inside function
+# In quickcat_loader.py:
+def register_copy_cataloger():
+    """Deferred because harvest_metadata imports httpx/tenacity at module level."""
+    _reg("harvest_metadata", ROOT / "skills/copy-cataloger/scripts/harvest_metadata.py")
 ```
 
 ### 3. Configuration Files Must Exist
 
-**Gotcha**: Scripts call `_load_config()` at module level (inside `ROOT / "config.json"`). Tests must handle this with `monkeypatch.setattr()`.
+**Gotcha**: Scripts define `_load_config()` at module level but call it inside runtime functions (e.g., `orchestrate()`, `harvest_metadata()`). The real `config.json` must exist at the repo root for production use, but tests should mock it to avoid file I/O.
 
-**Solution**: See `tests/integration/test_harvest_orchestrator_e2e.py` for mocking pattern:
+**Solution**: Use the shared `mock_config_factory` fixture from `conftest.py`:
 
 ```python
-def mock_config():
-    return {"org_code": "TEST_ORG"}
-monkeypatch.setattr(harvest_orchestrator, "_load_config", mock_config)
+async def test_example(mock_config_factory):
+    mock_config_factory(harvest_orchestrator, {"org_code": "TEST_ORG"})
 ```
 
 ### 4. Integration Tests Need Multiple Sources

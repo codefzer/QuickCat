@@ -18,7 +18,7 @@ ROOT = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(ROOT))
 import quickcat_loader          # noqa: F401  – registers cross-package import aliases
 
-from shared_resources.scripts.transaction_log import list_revisions, rollback  # noqa: E402
+from shared_resources.scripts.transaction_log import list_revisions, rollback, purge_log  # noqa: E402
 
 
 def _load_log(log_path: str) -> list[dict]:
@@ -88,6 +88,15 @@ def cmd_rollback_single(args):
     print("[rollback] Success.")
 
 
+def cmd_purge(args):
+    """Purge the transaction log — all entries or those older than --keep-days."""
+    removed = purge_log(args.log, keep_days=args.keep_days)
+    if args.keep_days is None:
+        print(f"[purge] Deleted log file. {removed} entries removed.")
+    else:
+        print(f"[purge] Removed {removed} entries older than {args.keep_days} day(s).")
+
+
 def cmd_rollback_all(args):
     """Rollback all records in the log to their first recorded 'before' state."""
     if not args.mrc:
@@ -124,10 +133,16 @@ def main():
     parser.add_argument("--record-id", help="Record identifier, e.g. '001:ocn12345678'")
     parser.add_argument("--timestamp", help="ISO timestamp from the log entry to restore")
 
+    parser.add_argument("--keep-days", type=int, default=None, metavar="N",
+                        help="With --purge: keep entries newer than N days, remove the rest. "
+                             "Omit to delete the entire log.")
+
     actions = parser.add_mutually_exclusive_group()
     actions.add_argument("--list", action="store_true", help="List revisions in the log")
     actions.add_argument("--rollback-all", action="store_true",
                          help="Rollback all records to first recorded state")
+    actions.add_argument("--purge", action="store_true",
+                         help="Purge the log. Use with --keep-days N to retain recent entries.")
 
     args = parser.parse_args()
 
@@ -135,10 +150,12 @@ def main():
         cmd_list(args)
     elif args.rollback_all:
         cmd_rollback_all(args)
+    elif args.purge:
+        cmd_purge(args)
     elif args.record_id and args.timestamp:
         cmd_rollback_single(args)
     else:
-        print("Provide --list, --rollback-all, or (--record-id + --timestamp)", file=sys.stderr)
+        print("Provide --list, --rollback-all, --purge, or (--record-id + --timestamp)", file=sys.stderr)
         parser.print_help()
         sys.exit(1)
 

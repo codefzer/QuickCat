@@ -124,6 +124,69 @@ def list_revisions(record_id: str, mrc_path: str = ".") -> list[dict]:
     return entries
 
 
+def clone_record(record: pymarc.Record) -> pymarc.Record:
+    """Return a copy of a Record for before/after transaction snapshots.
+
+    Args:
+        record: The pymarc Record to copy.
+
+    Returns:
+        A new pymarc.Record with the same leader and fields.
+    """
+    copy = pymarc.Record()
+    copy.leader = record.leader
+    for field in record.fields:
+        copy.add_field(field)
+    return copy
+
+
+def purge_log(mrc_path: str, keep_days: int | None = None) -> int:
+    """Remove entries from the transaction log.
+
+    Args:
+        mrc_path: Path to the .mrc file (used to locate the log).
+        keep_days: If given, remove only entries older than this many days.
+                   If None, delete the entire log file.
+
+    Returns:
+        Number of entries removed.
+    """
+    log_file = _log_path(mrc_path)
+    if not log_file.exists():
+        return 0
+
+    if keep_days is None:
+        # Count entries before deleting
+        count = sum(1 for line in log_file.read_text(encoding="utf-8").splitlines() if line.strip())
+        log_file.unlink()
+        return count
+
+    cutoff = datetime.now(timezone.utc).timestamp() - keep_days * 86400
+    kept: list[str] = []
+    removed = 0
+    with open(log_file, encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            try:
+                entry = json.loads(stripped)
+                ts = datetime.fromisoformat(entry["timestamp"]).timestamp()
+                if ts >= cutoff:
+                    kept.append(stripped)
+                else:
+                    removed += 1
+            except (json.JSONDecodeError, KeyError, ValueError):
+                kept.append(stripped)  # Keep malformed lines to avoid silent data loss
+
+    if removed:
+        with open(log_file, "w", encoding="utf-8") as f:
+            for line in kept:
+                f.write(line + "\n")
+
+    return removed
+
+
 def rollback(record_id: str, timestamp: str, mrc_path: str) -> pymarc.Record | None:
     """Restore the 'before' snapshot for a specific log entry.
 

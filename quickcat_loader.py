@@ -81,10 +81,16 @@ def _alias(dotted: str, short: str) -> None:
 _reg("normalize_dates", ROOT / "shared-resources/scripts/normalize_dates.py")
 _reg("transaction_log", ROOT / "shared-resources/scripts/transaction_log.py")
 _reg("parse_marc",      ROOT / "shared-resources/scripts/parse_marc.py")
+_reg("config_loader",   ROOT / "shared-resources/scripts/config_loader.py")
+_reg("marc_io",         ROOT / "shared-resources/scripts/marc_io.py")
+_reg("marc_utils",      ROOT / "shared-resources/scripts/marc_utils.py")
 
 _alias("shared_resources.scripts.normalize_dates", "normalize_dates")
 _alias("shared_resources.scripts.transaction_log", "transaction_log")
 _alias("shared_resources.scripts.parse_marc",      "parse_marc")
+_alias("shared_resources.scripts.config_loader",   "config_loader")
+_alias("shared_resources.scripts.marc_io",         "marc_io")
+_alias("shared_resources.scripts.marc_utils",      "marc_utils")
 
 
 # ── On-demand helpers — call these before the cross-skill imports that need them ─

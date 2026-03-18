@@ -1,24 +1,12 @@
 """Integration tests for import_pipeline: end-to-end MARC processing."""
 
 import json
-import tempfile
 from pathlib import Path
 
 import pymarc
 import pytest
 
 import import_pipeline
-
-
-@pytest.fixture
-def mrc_input_file(tmp_path, sample_record):
-    """Create a temporary ISO-2709 MARC file with sample record."""
-    path = tmp_path / "input.mrc"
-    with open(path, "wb") as f:
-        writer = pymarc.MARCWriter(f)
-        writer.write(sample_record)
-        writer.close()
-    return path
 
 
 @pytest.fixture
@@ -38,18 +26,18 @@ def mrc_with_issues(tmp_path):
     return path
 
 
-def test_import_pipeline_mrc_to_output(mrc_input_file, tmp_path, mock_load_profile_factory, argv_manager):
+def test_import_pipeline_mrc_to_output(tmp_mrc_file, tmp_path, mock_load_profile_factory, argv_manager):
     """Test full pipeline: read .mrc → clean → validate → write output."""
     # Setup mocks using shared factories
     mock_load_profile_factory(import_pipeline)
-    argv_manager("import_pipeline.py", str(mrc_input_file))
+    argv_manager("import_pipeline.py", str(tmp_mrc_file))
 
     # Run with ISO-2709 input
     import_pipeline.main()
 
     # Check that output files were created
-    import_ready = mrc_input_file.parent / f"{mrc_input_file.stem}_import_ready.mrc"
-    report = mrc_input_file.parent / f"{mrc_input_file.stem}_import_report.json"
+    import_ready = tmp_mrc_file.parent / f"{tmp_mrc_file.stem}_import_ready.mrc"
+    report = tmp_mrc_file.parent / f"{tmp_mrc_file.stem}_import_report.json"
 
     assert import_ready.exists(), "Output .mrc file not created"
     assert report.exists(), "Report JSON not created"
@@ -88,18 +76,17 @@ def test_import_pipeline_validation_report(mrc_with_issues, tmp_path, mock_load_
     assert any("245" in str(issue) for error in errors for issue in error.get("issues", []))
 
 
-def test_import_pipeline_output_format(mrc_input_file, mock_load_profile_factory, argv_manager, monkeypatch):
+def test_import_pipeline_output_format(tmp_mrc_file, mock_load_profile_factory, argv_manager):
     """Test that output MARC has correct encoding and structure."""
-    # Custom mock that deletes 035 field for this specific test
-    def mock_profile(path):
-        return {"delete_tags": ["035"], "delete_ranges": [[]], "org_code": "TEST"}
-
-    monkeypatch.setattr(import_pipeline, "_load_profile", mock_profile)
-    argv_manager("import_pipeline.py", str(mrc_input_file))
+    # Use factory with custom profile that deletes 035 field
+    mock_load_profile_factory(import_pipeline, {
+        "delete_tags": ["035"], "delete_ranges": [[]], "org_code": "TEST",
+    })
+    argv_manager("import_pipeline.py", str(tmp_mrc_file))
 
     import_pipeline.main()
 
-    import_ready = mrc_input_file.parent / f"{mrc_input_file.stem}_import_ready.mrc"
+    import_ready = tmp_mrc_file.parent / f"{tmp_mrc_file.stem}_import_ready.mrc"
 
     with open(import_ready, "rb") as f:
         reader = pymarc.MARCReader(f, to_unicode=True)

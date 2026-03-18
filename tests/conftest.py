@@ -164,9 +164,9 @@ def mock_config_factory(monkeypatch):
 @pytest.fixture
 def mock_load_profile_factory(monkeypatch):
     """Factory for mocking _load_profile in integration tests."""
-    def setup(module, delete_tags=None):
-        profile = {
-            "delete_tags": delete_tags or [],
+    def setup(module, profile=None):
+        profile = profile or {
+            "delete_tags": [],
             "delete_ranges": [[]],
             "org_code": "TEST",
         }

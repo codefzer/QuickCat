@@ -1,6 +1,5 @@
 """Integration tests for harvest_orchestrator: end-to-end copy-cataloging workflow."""
 
-import asyncio
 import json
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
@@ -108,13 +107,11 @@ async def test_orchestrate_handles_validation_error(mock_config_factory):
 
 
 @pytest.mark.asyncio
-async def test_orchestrate_handles_no_records_found(monkeypatch):
+async def test_orchestrate_handles_no_records_found(mock_config_factory, monkeypatch):
     """Test that orchestrator fails gracefully when no records found."""
 
-    def mock_config():
-        return {}
-
-    monkeypatch.setattr(harvest_orchestrator, "_load_config", mock_config)
+    # Mock _load_config with empty config
+    mock_config_factory(harvest_orchestrator, {})
 
     # Mock harvest to return not-found messages
     async def mock_harvest(identifier, source):

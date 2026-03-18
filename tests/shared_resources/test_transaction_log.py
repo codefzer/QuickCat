@@ -1,6 +1,7 @@
 """Tests for shared-resources/scripts/transaction_log.py"""
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pymarc
@@ -96,6 +97,79 @@ def test_rollback_returns_none_for_unmatched_timestamp(tmp_path):
     tl.log_edit("skill", rec, rec, mrc_path=mrc)
     result = tl.rollback("001:ocn777", "2000-01-01T00:00:00+00:00", mrc)
     assert result is None
+
+
+# ─── purge_log ────────────────────────────────────────────────────────────────
+
+def test_purge_log_no_log_file_returns_zero(tmp_path):
+    mrc = str(tmp_path / "records.mrc")
+    removed = tl.purge_log(mrc)
+    assert removed == 0
+
+
+def test_purge_log_deletes_entire_log_when_no_keep_days(tmp_path):
+    mrc = str(tmp_path / "records.mrc")
+    rec = _make_record()
+    tl.log_edit("skill", rec, rec, mrc_path=mrc)
+    tl.log_edit("skill", rec, rec, mrc_path=mrc)
+    log_file = tmp_path / ".quickcat.log"
+    assert log_file.exists()
+
+    removed = tl.purge_log(mrc, keep_days=None)
+
+    assert removed == 2
+    assert not log_file.exists()
+
+
+def test_purge_log_returns_zero_when_all_entries_within_keep_days(tmp_path):
+    mrc = str(tmp_path / "records.mrc")
+    rec = _make_record()
+    tl.log_edit("skill", rec, rec, mrc_path=mrc)
+
+    removed = tl.purge_log(mrc, keep_days=90)
+
+    assert removed == 0
+    # File still exists with the entry intact
+    entries = tl.list_revisions("001:ocn999", mrc_path=mrc)
+    assert len(entries) == 1
+
+
+def test_purge_log_removes_old_entries_and_keeps_recent(tmp_path):
+    from datetime import timedelta
+    mrc = str(tmp_path / "records.mrc")
+    log_file = tmp_path / ".quickcat.log"
+    rec = _make_record()
+
+    # Write one old entry (91 days ago) and one recent entry
+    old_ts = (datetime.now(timezone.utc) - timedelta(days=91)).isoformat()
+    new_ts = datetime.now(timezone.utc).isoformat()
+
+    old_entry = {
+        "timestamp": old_ts,
+        "skill": "old-skill",
+        "record_id": "001:ocn999",
+        "before": tl._record_to_dict(rec),
+        "after": tl._record_to_dict(rec),
+        "changes": [],
+    }
+    new_entry = {
+        "timestamp": new_ts,
+        "skill": "new-skill",
+        "record_id": "001:ocn999",
+        "before": tl._record_to_dict(rec),
+        "after": tl._record_to_dict(rec),
+        "changes": [],
+    }
+    with open(log_file, "w", encoding="utf-8") as f:
+        f.write(json.dumps(old_entry) + "\n")
+        f.write(json.dumps(new_entry) + "\n")
+
+    removed = tl.purge_log(mrc, keep_days=90)
+
+    assert removed == 1
+    remaining = tl.list_revisions("001:ocn999", mrc_path=mrc)
+    assert len(remaining) == 1
+    assert remaining[0]["skill"] == "new-skill"
 
 
 # ─── round-trip serialization ─────────────────────────────────────────────────
