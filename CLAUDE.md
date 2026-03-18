@@ -5,9 +5,9 @@
 ### Quick Start
 
 ```bash
-pytest -v              # Run all 127 tests
-pytest tests/          # Unit tests only (120)
-pytest tests/integration/  # Integration tests only (7)
+pytest -v                                    # Run all 127 tests
+pytest tests/ --ignore=tests/integration/    # Unit tests only (120)
+pytest tests/integration/ -v                 # Integration tests only (7)
 ```
 
 ### Test Structure
