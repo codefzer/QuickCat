@@ -3,10 +3,10 @@ name: batch-cleaner
 description: >-
   This skill should be used when the user wants to 'clean MARC records', 'strip
   vendor tags', 'delete 9XX fields', 'normalize unicode', 'fix leader byte 09',
-  'apply a profiler', 'batch sanitize records', 'remove local fields', 'stamp 003',
+  'apply a profile', 'batch sanitize records', 'remove local fields', 'stamp 003',
   'enforce UTF-8', 'NFC normalization', 'remove OCLC fields', 'delete holding fields',
   'tag deletion', or needs to prepare imported records for local catalog ingestion
-  by stripping utility/vendor-specific fields. Also trigger for 'profiler-based
+  by stripping utility/vendor-specific fields. Also trigger for 'profile-based
   cleaning' or 'MARC record sanitation'.
 ---
 
@@ -62,5 +62,5 @@ Customize `org_code` with your institution's MARC organization code
 
 ## Reference Files
 
-- `references/profiler-guide.md` — Leader byte positions, MARC org codes, tag deletion strategy
+- `references/profile-guide.md` — Leader byte positions, MARC org codes, tag deletion strategy
 - `assets/default-profile.json` — Default deletion profile (customize before use)

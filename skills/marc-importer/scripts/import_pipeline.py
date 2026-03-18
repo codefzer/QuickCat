@@ -17,6 +17,7 @@ import pymarc
 
 ROOT = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(ROOT))
+import quickcat_loader          # noqa: F401  – registers cross-package import aliases
 
 from skills.marc_importer.scripts.excel_to_marc import excel_to_records  # noqa: E402
 from skills.batch_cleaner.scripts.batch_clean import clean_record, _load_profile  # noqa: E402

@@ -20,6 +20,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 ROOT = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(ROOT))
+import quickcat_loader          # noqa: F401  – registers cross-package import aliases
 
 from shared_resources.scripts.transaction_log import log_edit  # noqa: E402
 

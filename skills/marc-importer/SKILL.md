@@ -5,13 +5,13 @@ description: >-
   'ingest a MARC file', 'import from Excel', 'import from spreadsheet', 'process a vendor
   file', 'load records into catalog', 'clean and import', 'ISO-2709 import', 'bulk load MARC',
   or needs to take a raw MARC file or Excel spreadsheet and prepare it for ingestion into
-  a local ILS. Also trigger for 'profiler import', 'MARC file processing', or 'Excel to MARC'.
+  a local ILS. Also trigger for 'profile-based import', 'MARC file processing', or 'Excel to MARC'.
 ---
 
 # MARC Importer
 
 Ingest MARC records from ISO-2709 binary files or Excel spreadsheets,
-apply the batch-cleaner profiler, validate structure, and output an
+apply the batch-cleaner profile, validate structure, and output an
 import-ready `.mrc` file with a processing report.
 
 ## Workflow
@@ -33,7 +33,7 @@ Steps performed automatically:
 1. **Detect format** — ISO-2709 binary or Excel (.xlsx/.csv) based on file extension.
 2. **Parse input** — Read all records/rows.
 3. **Excel → MARC** — Map column headers using `crosswalk.json` + `config.json` aliases.
-4. **Apply cleaner** — Run batch-cleaner profiler (tag deletion, Unicode NFC, Leader byte).
+4. **Apply cleaner** — Run batch-cleaner profile (tag deletion, Unicode NFC, Leader byte).
 5. **Validate** — Check required fields (001, 245, 008) against `validation-rules.json`.
 6. **Output** — `{stem}_import_ready.mrc` + summary report.
 

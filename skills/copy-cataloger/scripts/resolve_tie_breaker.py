@@ -16,6 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(ROOT))
+import quickcat_loader          # noqa: F401  – registers cross-package import aliases
 
 from skills.copy_cataloger.scripts.harvest_metadata import harvest_metadata  # noqa: E402
 from skills.copy_cataloger.scripts.audit_consensus import _parse_marcxml_string  # noqa: E402
