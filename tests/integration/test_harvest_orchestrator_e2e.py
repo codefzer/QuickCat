@@ -29,17 +29,14 @@ def sample_marcxml():
 
 
 @pytest.mark.asyncio
-async def test_orchestrate_full_harvest_workflow(sample_marcxml, tmp_path, monkeypatch):
+async def test_orchestrate_full_harvest_workflow(sample_marcxml, tmp_path, mock_config_factory, monkeypatch):
     """Test full orchestrator workflow: validate → harvest → merge → output.
 
     Tests with multiple sources to exercise the merge loop (records[1:]).
     """
 
-    # Mock _load_config
-    def mock_config():
-        return {"org_code": "TEST_ORG"}
-
-    monkeypatch.setattr(harvest_orchestrator, "_load_config", mock_config)
+    # Mock _load_config using shared factory
+    mock_config_factory(harvest_orchestrator, {"org_code": "TEST_ORG"})
 
     # Mock harvest_metadata to return sample MARCXML
     async def mock_harvest(identifier, source):
@@ -93,13 +90,11 @@ async def test_orchestrate_full_harvest_workflow(sample_marcxml, tmp_path, monke
 
 
 @pytest.mark.asyncio
-async def test_orchestrate_handles_validation_error(monkeypatch):
+async def test_orchestrate_handles_validation_error(mock_config_factory):
     """Test that orchestrator validates ISBN before harvesting."""
 
-    def mock_config():
-        return {}
-
-    monkeypatch.setattr(harvest_orchestrator, "_load_config", mock_config)
+    # Mock _load_config with empty config
+    mock_config_factory(harvest_orchestrator, {})
 
     # Try with invalid ISBN
     result = await harvest_orchestrator.orchestrate(
@@ -136,17 +131,15 @@ async def test_orchestrate_handles_no_records_found(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_orchestrate_applies_consensus_decisions(sample_marcxml, tmp_path, monkeypatch):
+async def test_orchestrate_applies_consensus_decisions(sample_marcxml, tmp_path, mock_config_factory, monkeypatch):
     """Test that orchestrator applies consensus decisions during multi-source merge.
 
     Verifies that when audit_consensus returns a decision (green/yellow/red),
     the orchestrator applies those decisions via _apply_merge.
     """
 
-    def mock_config():
-        return {"org_code": "TEST"}
-
-    monkeypatch.setattr(harvest_orchestrator, "_load_config", mock_config)
+    # Mock _load_config using shared factory
+    mock_config_factory(harvest_orchestrator, {"org_code": "TEST"})
 
     # Both sources return MARCXML
     async def mock_harvest(identifier, source):

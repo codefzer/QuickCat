@@ -148,3 +148,35 @@ def validation_rules() -> dict:
             "leader_09": "Must be 'a' for Unicode records",
         },
     }
+
+
+# ─── Integration Test Fixtures ────────────────────────────────────────────
+
+@pytest.fixture
+def mock_config_factory(monkeypatch):
+    """Factory for mocking _load_config in integration tests."""
+    def setup(module, config=None):
+        config = config or {"org_code": "TEST_ORG"}
+        monkeypatch.setattr(module, "_load_config", lambda: config)
+    return setup
+
+
+@pytest.fixture
+def mock_load_profile_factory(monkeypatch):
+    """Factory for mocking _load_profile in integration tests."""
+    def setup(module, delete_tags=None):
+        profile = {
+            "delete_tags": delete_tags or [],
+            "delete_ranges": [[]],
+            "org_code": "TEST",
+        }
+        monkeypatch.setattr(module, "_load_profile", lambda path: profile)
+    return setup
+
+
+@pytest.fixture
+def argv_manager(monkeypatch):
+    """Safely manage sys.argv changes in tests using monkeypatch."""
+    def set_argv(*args):
+        monkeypatch.setattr("sys.argv", list(args))
+    return set_argv

@@ -38,26 +38,14 @@ def mrc_with_issues(tmp_path):
     return path
 
 
-def test_import_pipeline_mrc_to_output(mrc_input_file, tmp_path, monkeypatch):
+def test_import_pipeline_mrc_to_output(mrc_input_file, tmp_path, mock_load_profile_factory, argv_manager):
     """Test full pipeline: read .mrc → clean → validate → write output."""
-    out_dir = tmp_path / "out"
-    out_dir.mkdir()
-
-    # Monkeypatch _load_profile to avoid reading real config
-    def mock_load_profile(path):
-        return {"delete_tags": [], "delete_ranges": [[]], "org_code": "TEST"}
-
-    monkeypatch.setattr(import_pipeline, "_load_profile", mock_load_profile)
+    # Setup mocks using shared factories
+    mock_load_profile_factory(import_pipeline)
+    argv_manager("import_pipeline.py", str(mrc_input_file))
 
     # Run with ISO-2709 input
-    import sys
-
-    old_argv = sys.argv
-    try:
-        sys.argv = ["import_pipeline.py", str(mrc_input_file)]
-        import_pipeline.main()
-    finally:
-        sys.argv = old_argv
+    import_pipeline.main()
 
     # Check that output files were created
     import_ready = mrc_input_file.parent / f"{mrc_input_file.stem}_import_ready.mrc"
@@ -80,22 +68,13 @@ def test_import_pipeline_mrc_to_output(mrc_input_file, tmp_path, monkeypatch):
         assert all("status" in item for item in data)
 
 
-def test_import_pipeline_validation_report(mrc_with_issues, tmp_path, monkeypatch):
+def test_import_pipeline_validation_report(mrc_with_issues, tmp_path, mock_load_profile_factory, argv_manager):
     """Test that validation errors are reported and problematic records excluded."""
+    # Setup mocks using shared factories
+    mock_load_profile_factory(import_pipeline)
+    argv_manager("import_pipeline.py", str(mrc_with_issues))
 
-    def mock_load_profile(path):
-        return {"delete_tags": [], "delete_ranges": [[]], "org_code": "TEST"}
-
-    monkeypatch.setattr(import_pipeline, "_load_profile", mock_load_profile)
-
-    import sys
-
-    old_argv = sys.argv
-    try:
-        sys.argv = ["import_pipeline.py", str(mrc_with_issues)]
-        import_pipeline.main()
-    finally:
-        sys.argv = old_argv
+    import_pipeline.main()
 
     report_path = mrc_with_issues.parent / f"{mrc_with_issues.stem}_import_report.json"
     with open(report_path) as f:
@@ -109,22 +88,16 @@ def test_import_pipeline_validation_report(mrc_with_issues, tmp_path, monkeypatc
     assert any("245" in str(issue) for error in errors for issue in error.get("issues", []))
 
 
-def test_import_pipeline_output_format(mrc_input_file, monkeypatch):
+def test_import_pipeline_output_format(mrc_input_file, mock_load_profile_factory, argv_manager, monkeypatch):
     """Test that output MARC has correct encoding and structure."""
-
-    def mock_load_profile(path):
+    # Custom mock that deletes 035 field for this specific test
+    def mock_profile(path):
         return {"delete_tags": ["035"], "delete_ranges": [[]], "org_code": "TEST"}
 
-    monkeypatch.setattr(import_pipeline, "_load_profile", mock_load_profile)
+    monkeypatch.setattr(import_pipeline, "_load_profile", mock_profile)
+    argv_manager("import_pipeline.py", str(mrc_input_file))
 
-    import sys
-
-    old_argv = sys.argv
-    try:
-        sys.argv = ["import_pipeline.py", str(mrc_input_file)]
-        import_pipeline.main()
-    finally:
-        sys.argv = old_argv
+    import_pipeline.main()
 
     import_ready = mrc_input_file.parent / f"{mrc_input_file.stem}_import_ready.mrc"
 
