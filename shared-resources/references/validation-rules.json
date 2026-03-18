@@ -1,0 +1,49 @@
+{
+  "required_fields": {
+    "minimum_level": {
+      "fields": ["245"],
+      "note": "At absolute minimum a record must have a title"
+    },
+    "core_level": {
+      "fields": ["001", "245", "008"],
+      "note": "Core cataloging: control number, title, fixed field"
+    },
+    "full_level": {
+      "fields": ["001", "003", "008", "040", "100", "245", "264", "300", "650"],
+      "note": "Full-level cataloging required for original records"
+    }
+  },
+  "field_validation": {
+    "020": {
+      "isbn13_check_digit": "Validate Mod 10 algorithm for 13-digit ISBNs",
+      "isbn10_check_digit": "Validate Mod 11 algorithm for 10-digit ISBNs",
+      "format": "^97[89][0-9]{9}[0-9X]$"
+    },
+    "022": {
+      "format": "^[0-9]{4}-[0-9]{3}[0-9X]$",
+      "note": "ISSN: four digits, hyphen, four digits (last may be X)"
+    },
+    "010": {
+      "lccn_format": "^(n|nb|no|nr|ns|n |sh|sj)[0-9]{8}$|^[0-9]{8,10}$",
+      "note": "LCCN: normalize leading spaces and trailing check"
+    },
+    "245": {
+      "must_end_with_punctuation": true,
+      "valid_endings": [".", "!", "?", ")", "]", "-"],
+      "indicator1": "0 or 1 (1 if 1XX field present, otherwise 0)"
+    },
+    "100": {
+      "isbd_trailing_comma_before_dates": true,
+      "must_not_end_with_period_if_dates_present": true
+    },
+    "008": {
+      "length": 40,
+      "date_format": "YYMMDD for positions 00-05"
+    }
+  },
+  "encoding": {
+    "leader_09": "Must be 'a' for Unicode (UTF-8) records",
+    "normalization": "NFC normalization required for all string data",
+    "marc8_detection": "Flag records where Leader/09 is blank but data contains non-ASCII"
+  }
+}

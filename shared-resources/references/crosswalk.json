@@ -1,0 +1,99 @@
+{
+  "dublin_core_to_marc": {
+    "dc:title":       { "marc_tag": "245", "subfield": "a", "note": "Main title" },
+    "dc:creator":     { "marc_tag": "100", "subfield": "a", "transform": "invert_name", "note": "Invert to 'Surname, Forename'" },
+    "dc:subject":     { "marc_tag": "650", "subfield": "a", "indicator1": " ", "indicator2": "0" },
+    "dc:description": { "marc_tag": "520", "subfield": "a" },
+    "dc:publisher":   { "marc_tag": "264", "subfield": "b", "indicator1": " ", "indicator2": "1" },
+    "dc:date":        { "marc_tag": "264", "subfield": "c", "transform": "normalize_year" },
+    "dc:type":        { "marc_tag": "655", "subfield": "a", "indicator2": "7", "note": "Genre/Form" },
+    "dc:format":      { "marc_tag": "300", "subfield": "a", "note": "Physical description" },
+    "dc:identifier":  [
+      { "condition": "is_isbn", "marc_tag": "020", "subfield": "a" },
+      { "condition": "is_issn", "marc_tag": "022", "subfield": "a" },
+      { "condition": "is_url",  "marc_tag": "856", "subfield": "u", "indicator1": "4", "indicator2": "0" }
+    ],
+    "dc:source":      { "marc_tag": "787", "subfield": "t", "indicator1": "0", "indicator2": "8", "note": "Related item" },
+    "dc:language":    [
+      { "marc_tag": "008", "positions": "35-37", "transform": "iso639_2" },
+      { "marc_tag": "041", "subfield": "a" }
+    ],
+    "dc:relation":    { "marc_tag": "787", "subfield": "t", "indicator1": "0", "indicator2": " " },
+    "dc:coverage":    { "marc_tag": "651", "subfield": "a", "indicator1": " ", "indicator2": "0", "note": "Geographic subject" },
+    "dc:rights":      { "marc_tag": "542", "subfield": "l", "note": "Information relating to copyright notice" }
+  },
+  "excel_to_marc": {
+    "245": {
+      "subfield": "a",
+      "aliases": ["Title", "Book Title", "TITLE", "title", "name", "book_title"]
+    },
+    "245b": {
+      "subfield": "b",
+      "aliases": ["Subtitle", "Sub Title", "subtitle"]
+    },
+    "100": {
+      "subfield": "a",
+      "aliases": ["Author", "AUTHOR", "Creator", "author_name", "main_author"],
+      "transform": "invert_name"
+    },
+    "700": {
+      "subfield": "a",
+      "aliases": ["Co-Author", "Editor", "Contributor", "added_author"],
+      "repeatable": true
+    },
+    "020": {
+      "subfield": "a",
+      "aliases": ["ISBN", "isbn", "ISBN-13", "ISBN13", "ISBN-10", "ISBN10"],
+      "validate": "isbn"
+    },
+    "022": {
+      "subfield": "a",
+      "aliases": ["ISSN", "issn"],
+      "validate": "issn"
+    },
+    "264b": {
+      "marc_tag": "264",
+      "subfield": "b",
+      "indicator2": "1",
+      "aliases": ["Publisher", "publisher", "PUBLISHER", "pub_name"]
+    },
+    "264c": {
+      "marc_tag": "264",
+      "subfield": "c",
+      "indicator2": "1",
+      "aliases": ["Year", "Pub Year", "Publication Date", "year", "pub_date", "date"],
+      "transform": "normalize_year"
+    },
+    "300a": {
+      "marc_tag": "300",
+      "subfield": "a",
+      "aliases": ["Pages", "page_count", "pp", "pages", "extent"],
+      "transform": "format_pagination"
+    },
+    "650": {
+      "subfield": "a",
+      "aliases": ["Subject", "Subjects", "subject", "topics"],
+      "indicator1": " ",
+      "indicator2": "0",
+      "repeatable": true,
+      "split_on": ";"
+    },
+    "041": {
+      "subfield": "a",
+      "aliases": ["Language", "language", "lang"],
+      "transform": "iso639_2"
+    },
+    "type": {
+      "virtual": true,
+      "aliases": ["Type", "Material Type", "Format", "type", "format"],
+      "note": "Used to select marc-template, not written to a MARC field directly"
+    }
+  },
+  "transforms": {
+    "invert_name": "Convert 'Firstname Lastname' to 'Lastname, Firstname'",
+    "normalize_year": "Extract 4-digit year from any date string",
+    "format_pagination": "Convert '250' to '250 pages' with ISBD punctuation",
+    "iso639_2": "Convert language name or ISO 639-1 code to ISO 639-2 3-letter code",
+    "isbn": "Validate ISBN-10 or ISBN-13 check digit before writing"
+  }
+}

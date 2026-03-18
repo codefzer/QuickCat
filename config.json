@@ -1,0 +1,35 @@
+{
+  "servers": {
+    "loc":  { "type": "SRU",   "url": "https://lx2.loc.gov/sru/authorities", "database": "lcdb" },
+    "bl":   { "type": "Z3950", "host": "z3950.bl.uk",    "port": 9909, "database": "BNB" },
+    "nls":  { "type": "Z3950", "host": "z3950.nls.uk",   "port": 210,  "database": "JANUS" },
+    "oclc": { "type": "Z3950", "host": "z3950.oclc.org", "port": 210,  "database": "WorldCat" }
+  },
+  "search": {
+    "bib1_isbn":   { "use": 7, "relation": 3, "structure": 2, "completeness": 3 },
+    "bib1_title":  { "use": 4, "relation": 3, "structure": 6, "completeness": 1 },
+    "bib1_author": { "use": 1, "relation": 3, "structure": 6, "completeness": 1 }
+  },
+  "timeouts": {
+    "z3950_connect": 10,
+    "z3950_search": 30,
+    "sru_request": 15
+  },
+  "retry": {
+    "max_attempts": 5,
+    "backoff_factor": 2
+  },
+  "consensus": {
+    "similarity_threshold": 0.85,
+    "tie_breaker_server": "nls"
+  },
+  "marc_templates": "shared-resources/templates/marc-templates.json",
+  "priority_rules": "shared-resources/references/priority-rules.json",
+  "column_aliases": {
+    "245": ["Title", "Book Title", "TITLE", "title", "name"],
+    "100": ["Author", "AUTHOR", "Creator", "author_name"],
+    "020": ["ISBN", "isbn", "ISBN-13", "ISBN13"],
+    "260c": ["Year", "Pub Year", "Publication Date", "year"],
+    "300a": ["Pages", "page_count", "pp"]
+  }
+}

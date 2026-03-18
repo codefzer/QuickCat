@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+.Python
+
+# Environment / secrets — NEVER commit credentials
+.env
+.env.*
+*.pem
+*.key
+secrets.json
+
+# QuickCat runtime outputs
+.quickcat.log
+*_cleaned.mrc
+*_verified.mrc
+*_enhanced.mrc
+*_rollback_*.mrc
+*_export.mrc
+*_import_ready.mrc
+*_conflicts.json
+*_audit.json
+*_import_report.json
+*_metrics.json
+merged_*.mrc
+
+# Sample / test MARC files (may contain proprietary records)
+shared-resources/samples/*.mrc
+shared-resources/samples/*.xml
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+
+# Claude local settings
+.claude/settings.local.json

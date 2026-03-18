@@ -1,0 +1,30 @@
+{
+  "description": "Default tag deletion profile for QuickCat batch cleaner. Customize for your institution.",
+  "delete_tags": [
+    "019",
+    "029",
+    "035",
+    "049",
+    "263",
+    "588",
+    "938",
+    "994"
+  ],
+  "delete_ranges": [
+    ["900", "999"]
+  ],
+  "org_code": "YOUR_MARC_ORG_CODE",
+  "notes": {
+    "019": "OCLC cross-references (not needed locally)",
+    "029": "Other system control numbers",
+    "035": "System control number (remove before importing to avoid ILS conflicts)",
+    "049": "Holdings information — local ILS will generate",
+    "263": "Projected publication date — remove after cataloging",
+    "588": "Source of description note — vendor-specific",
+    "938": "Vendor order/processing data",
+    "994": "OCLC processing data",
+    "9XX_range": "All 9XX local/vendor fields",
+    "customize": "Add institution-specific tags to delete_tags as needed",
+    "org_code": "Replace with your MARC organization code from https://www.loc.gov/marc/organizations/"
+  }
+}

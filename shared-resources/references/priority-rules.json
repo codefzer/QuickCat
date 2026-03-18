@@ -1,0 +1,36 @@
+{
+  "global_priority": {
+    "description": "Fields where the reference source (LC/BL/NLS) wins on conflict",
+    "fields": {
+      "100": { "subfields": ["d"], "note": "Author dates — use authority-controlled form" },
+      "110": { "subfields": ["d"], "note": "Corporate name dates" },
+      "050": { "subfields": ["a", "b"], "note": "LC Classification" },
+      "082": { "subfields": ["a"], "note": "Dewey Decimal Number" },
+      "600": { "subfields": ["a", "b", "c", "d", "q"], "note": "Subject — Personal Name" },
+      "610": { "subfields": ["a", "b"], "note": "Subject — Corporate Name" },
+      "650": { "subfields": ["a", "v", "x", "y", "z"], "note": "Topical subject headings" },
+      "651": { "subfields": ["a", "v", "x", "y", "z"], "note": "Geographic subject headings" }
+    }
+  },
+  "local_priority": {
+    "description": "Fields that always preserve local values — never overwrite even if reference source has a value",
+    "fields": {
+      "003": "MARC org code — local system identifier",
+      "035": "System control number — local ILS number",
+      "049": "Holdings information",
+      "090": "Locally assigned call number",
+      "092": "Locally assigned Dewey",
+      "099": "Local free-text call number",
+      "590": "Local note",
+      "852": "Location/Call Number (item data)",
+      "856": "Electronic access — check but preserve local URLs",
+      "9XX": "All 9XX local fields"
+    }
+  },
+  "merge_logic": {
+    "green_auto_merge": "similarity_score >= 0.85 — accept reference value, no review needed",
+    "yellow_review": "0.50 <= similarity_score < 0.85 — flag for optional review, default accept reference",
+    "red_manual": "similarity_score < 0.50 — mandatory HITL review, trigger tie-breaker protocol",
+    "tie_breaker": "If two reference sources conflict at red severity, invoke third 'juror' library defined in config.json"
+  }
+}
