@@ -60,11 +60,17 @@ def _alias(dotted: str, short: str) -> None:
 _reg("normalize_dates", ROOT / "shared-resources/scripts/normalize_dates.py")
 _reg("transaction_log", ROOT / "shared-resources/scripts/transaction_log.py")
 _reg("parse_marc",      ROOT / "shared-resources/scripts/parse_marc.py")
+_reg("config_loader",   ROOT / "shared-resources/scripts/config_loader.py")
+_reg("marc_io",         ROOT / "shared-resources/scripts/marc_io.py")
+_reg("marc_utils",      ROOT / "shared-resources/scripts/marc_utils.py")
 
 # ── Step 2: register dotted aliases that scripts import by package path ────────
 _alias("shared_resources.scripts.normalize_dates", "normalize_dates")
 _alias("shared_resources.scripts.transaction_log", "transaction_log")
 _alias("shared_resources.scripts.parse_marc",      "parse_marc")
+_alias("shared_resources.scripts.config_loader",   "config_loader")
+_alias("shared_resources.scripts.marc_io",         "marc_io")
+_alias("shared_resources.scripts.marc_utils",      "marc_utils")
 
 # ── Step 3: load copy-cataloger scripts (harvest_metadata, audit_consensus first)
 _reg("validation_gate",  ROOT / "skills/copy-cataloger/scripts/validation_gate.py")
@@ -154,10 +160,10 @@ def validation_rules() -> dict:
 
 @pytest.fixture
 def mock_config_factory(monkeypatch):
-    """Factory for mocking _load_config in integration tests."""
+    """Factory for mocking load_config in integration tests."""
     def setup(module, config=None):
         config = config or {"org_code": "TEST_ORG"}
-        monkeypatch.setattr(module, "_load_config", lambda: config)
+        monkeypatch.setattr(module, "load_config", lambda: config)
     return setup
 
 

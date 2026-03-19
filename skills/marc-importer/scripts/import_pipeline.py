@@ -16,18 +16,15 @@ from pathlib import Path
 import pymarc
 
 ROOT = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "shared-resources" / "scripts"))
 import quickcat_loader                    # noqa: F401  – registers shared-resources aliases
 quickcat_loader.register_batch_cleaner()  # registers batch_clean on demand (both paths need it)
 
 from skills.batch_cleaner.scripts.batch_clean import clean_record, _load_profile  # noqa: E402
+from shared_resources.scripts.config_loader import load_validation_rules  # noqa: E402
+from shared_resources.scripts.marc_io import read_mrc, write_mrc  # noqa: E402
 # NOTE: excel_to_marc (and pandas) is imported lazily inside main() — only when the
 # input is actually an Excel/CSV file.  See the register_marc_importer() call below.
-
-
-def _load_validation_rules() -> dict:
-    with open(ROOT / "shared-resources" / "references" / "validation-rules.json") as f:
-        return json.load(f)
 
 
 def _validate_record(record: pymarc.Record, rules: dict) -> tuple[str, list[str]]:
@@ -76,7 +73,7 @@ def main():
     org_code = args.org_code or profile.get("org_code", "QUICKCAT")
 
     # Load validation rules
-    rules = _load_validation_rules()
+    rules = load_validation_rules()
 
     # 1. Parse input
     records = []
@@ -91,12 +88,8 @@ def main():
         print(f"[import] Parsed {len(records)} rows")
     else:
         print(f"[import] ISO-2709 mode: {input_path.name}")
-        with open(input_path, "rb") as f:
-            reader = pymarc.MARCReader(f, to_unicode=True, force_utf8=True)
-            for rec in reader:
-                if rec:
-                    records.append(rec)
-                    raw_report.append({"status": "ok", "warnings": []})
+        records = read_mrc(input_path)
+        raw_report = [{"status": "ok", "warnings": []} for _ in records]
         print(f"[import] Parsed {len(records)} records")
 
     # 2. Clean + validate
@@ -136,11 +129,7 @@ def main():
     ).with_suffix(".mrc")
     report_path = out_path.with_stem(out_path.stem.replace("_import_ready", "") + "_import_report").with_suffix(".json")
 
-    with open(out_path, "wb") as f:
-        writer = pymarc.MARCWriter(f)
-        for rec in final_records:
-            writer.write(rec)
-        writer.close()
+    write_mrc(final_records, out_path)
 
     with open(report_path, "w") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)

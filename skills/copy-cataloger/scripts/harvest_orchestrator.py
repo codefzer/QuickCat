@@ -16,14 +16,12 @@ import argparse
 import asyncio
 import json
 import sys
-import unicodedata
-from io import BytesIO
 from pathlib import Path
 
 import pymarc
 
 ROOT = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "shared-resources" / "scripts"))
 import quickcat_loader                  # noqa: F401  – registers shared-resources aliases
 quickcat_loader.register_tie_breaker()  # registers copy-cataloger base + resolve_tie_breaker
 
@@ -31,17 +29,9 @@ from skills.copy_cataloger.scripts.validation_gate import validate_isbn13, valid
 from skills.copy_cataloger.scripts.harvest_metadata import harvest_metadata  # noqa: E402
 from skills.copy_cataloger.scripts.audit_consensus import audit_consensus, print_dashboard, _parse_marcxml_string  # noqa: E402
 from skills.copy_cataloger.scripts.resolve_tie_breaker import resolve_tie_breaker  # noqa: E402
-from shared_resources.scripts.transaction_log import log_edit  # noqa: E402
-
-
-def _load_config() -> dict:
-    with open(ROOT / "config.json") as f:
-        return json.load(f)
-
-
-def _load_servers() -> dict:
-    with open(ROOT / "servers.json") as f:
-        return json.load(f)
+from shared_resources.scripts.transaction_log import log_edit, clone_record  # noqa: E402
+from shared_resources.scripts.config_loader import load_config, load_servers  # noqa: E402
+from shared_resources.scripts.marc_io import write_mrc  # noqa: E402
 
 
 def _apply_merge(
@@ -88,7 +78,7 @@ async def orchestrate(
 
     Returns summary dict with keys: status, merged_path, conflicts, changes.
     """
-    cfg = _load_config()
+    cfg = load_config()
 
     # 1. Validation gate
     import re
@@ -106,7 +96,7 @@ async def orchestrate(
 
     # 2. Parallel harvest
     if not sources:
-        sources = list(_load_servers().keys())
+        sources = list(load_servers().keys())
 
     print(f"[orchestrator] Harvesting from: {sources}")
     tasks = [harvest_metadata(identifier, src) for src in sources]
@@ -147,11 +137,7 @@ async def orchestrate(
                         if resolution["source"] == "local":
                             c["recommendation"] = "keep_local"
 
-        record_before = pymarc.Record()
-        record_before.leader = base.leader
-        for f in base.fields:
-            record_before.add_field(f)
-
+        record_before = clone_record(base)
         base, changes = _apply_merge(base, ref_rec, conflicts)
 
         log_edit(
@@ -164,10 +150,7 @@ async def orchestrate(
 
     # Write output
     out_path = Path(output_path) if output_path else Path(f"merged_{identifier.replace('-','')}.mrc")
-    with open(out_path, "wb") as f:
-        writer = pymarc.MARCWriter(f)
-        writer.write(base)
-        writer.close()
+    write_mrc([base], out_path)
 
     conflict_path = out_path.parent / (out_path.stem + "_conflicts.json")
     with open(conflict_path, "w") as f:

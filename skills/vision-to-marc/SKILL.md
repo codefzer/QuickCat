@@ -61,4 +61,4 @@ Pass `--auto-accept` to skip the prompt in batch workflows.
 ## Reference Files
 
 - `references/title-page-mapping.md` — Title page zones → MARC tag mapping
-- `assets/marc-template.json` — Empty record template for reference
+- `shared-resources/templates/marc-templates.json` — Material-specific Leader/008 defaults (book, ebook, journal)

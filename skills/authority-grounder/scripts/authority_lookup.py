@@ -7,11 +7,9 @@ Usage:
 
 import argparse
 import asyncio
-import difflib
 import json
 import re
 import sys
-import unicodedata
 from pathlib import Path
 
 import httpx
@@ -19,15 +17,13 @@ import pymarc
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 ROOT = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "shared-resources" / "scripts"))
 import quickcat_loader          # noqa: F401  – registers cross-package import aliases
 
-from shared_resources.scripts.transaction_log import log_edit  # noqa: E402
-
-
-def _load_config() -> dict:
-    with open(ROOT / "config.json") as f:
-        return json.load(f)
+from shared_resources.scripts.transaction_log import log_edit, clone_record  # noqa: E402
+from shared_resources.scripts.config_loader import load_config  # noqa: E402
+from shared_resources.scripts.marc_utils import similarity  # noqa: E402
+from shared_resources.scripts.marc_io import read_mrc, write_mrc  # noqa: E402
 
 
 # ─── id.loc.gov SRU endpoints ─────────────────────────────────────────────────
@@ -58,14 +54,11 @@ async def _suggest(heading: str, vocab: str = "subjects") -> list[dict]:
 
 def _best_match(heading: str, candidates: list[dict], threshold: float) -> dict | None:
     """Return the best matching candidate above threshold, or None."""
+    h = heading.strip(".")
     best = None
     best_score = 0.0
     for c in candidates:
-        score = difflib.SequenceMatcher(
-            None,
-            heading.lower().strip("."),
-            c["label"].lower().strip(".")
-        ).ratio()
+        score = similarity(h, c["label"].strip("."))
         if score > best_score:
             best_score = score
             best = c
@@ -214,7 +207,7 @@ def main():
 
     if args.test:
         print("[authority_lookup] --test: config and endpoint check")
-        cfg = _load_config()
+        cfg = load_config()
         print(f"  Threshold from config: {cfg['consensus']['similarity_threshold']}")
         print("  OK")
         return
@@ -223,15 +216,10 @@ def main():
         print("ERROR: provide mrc_file", file=sys.stderr)
         sys.exit(1)
 
-    cfg = _load_config()
+    cfg = load_config()
     threshold = args.threshold or cfg["consensus"]["similarity_threshold"]
 
-    records = []
-    with open(args.mrc_file, "rb") as f:
-        reader = pymarc.MARCReader(f, to_unicode=True, force_utf8=True)
-        for rec in reader:
-            if rec:
-                records.append(rec)
+    records = read_mrc(args.mrc_file)
 
     if not records:
         print("ERROR: no records found in input file", file=sys.stderr)
@@ -244,10 +232,7 @@ def main():
 
     async def process_all():
         for rec in records:
-            before = pymarc.Record()
-            before.leader = rec.leader
-            for f in rec.fields:
-                before.add_field(f)
+            before = clone_record(rec)
 
             updated, audit = await authority_lookup(rec, threshold)
             all_audits.extend(audit)
@@ -286,11 +271,7 @@ def main():
     out_path = Path(args.out) if args.out else Path(args.mrc_file).with_stem(
         Path(args.mrc_file).stem + "_verified"
     )
-    with open(out_path, "wb") as f:
-        writer = pymarc.MARCWriter(f)
-        for rec in updated_records:
-            writer.write(rec)
-        writer.close()
+    write_mrc(updated_records, out_path)
 
     audit_path = out_path.with_suffix(".json").with_stem(out_path.stem + "_audit")
     with open(audit_path, "w") as f:

@@ -6,18 +6,6 @@ import pytest
 import audit_consensus as ac
 
 
-# ─── _similarity ──────────────────────────────────────────────────────────────
-
-def test_similarity_identical():
-    score = ac._similarity("The great Gatsby", "The great Gatsby")
-    assert score == 1.0
-
-
-def test_similarity_very_different():
-    score = ac._similarity("The great Gatsby", "Moby Dick")
-    assert score < 0.5
-
-
 # ─── _is_local_priority ───────────────────────────────────────────────────────
 
 def test_is_local_priority_090(monkeypatch):

@@ -14,12 +14,11 @@ from pathlib import Path
 import pymarc
 
 ROOT = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "shared-resources" / "scripts"))
+import quickcat_loader  # noqa: F401  – registers shared-resources aliases
 
-
-def _load_validation_rules() -> dict:
-    with open(ROOT / "shared-resources" / "references" / "validation-rules.json") as f:
-        return json.load(f)
+from shared_resources.scripts.config_loader import load_validation_rules  # noqa: E402
+from shared_resources.scripts.marc_io import read_mrc, write_mrc  # noqa: E402
 
 
 def _is_ai_tagged(record: pymarc.Record) -> tuple[bool, dict[str, int]]:
@@ -59,14 +58,9 @@ def main():
         print("ERROR: provide mrc_file", file=sys.stderr)
         sys.exit(1)
 
-    rules = _load_validation_rules()
+    rules = load_validation_rules()
 
-    records = []
-    with open(args.mrc_file, "rb") as f:
-        reader = pymarc.MARCReader(f, to_unicode=True, force_utf8=True)
-        for rec in reader:
-            if rec:
-                records.append(rec)
+    records = read_mrc(args.mrc_file)
 
     print(f"[exporter] Loaded {len(records)} records")
 
@@ -111,11 +105,7 @@ def main():
     out_path = Path(args.out) if args.out else Path(args.mrc_file).with_stem(
         Path(args.mrc_file).stem + "_export"
     )
-    with open(out_path, "wb") as f:
-        writer = pymarc.MARCWriter(f)
-        for rec in export_records:
-            writer.write(rec)
-        writer.close()
+    write_mrc(export_records, out_path)
 
     # Write metrics
     metrics["ai_tagged_fields"] = dict(metrics["ai_tagged_fields"])

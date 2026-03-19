@@ -32,7 +32,7 @@ pip install -r requirements.txt
 
 ### Requirements
 
-- Python 3.11+
+- Python 3.10+
 - An [Anthropic API key](https://console.anthropic.com/) for vision and generation skills
 - Z39.50/SRU network access (institutional IP or credentials for OCLC/BL/NLS)
 
@@ -98,44 +98,8 @@ python3 skills/record-rollback/scripts/rollback.py \
 
 ---
 
-## Technical Standards
-
-| Standard | Implementation |
-|----------|---------------|
-| MARC validation | `pymarc` structural checks in every script |
-| Data models | `pydantic` for API responses and config objects |
-| Unicode | `unicodedata.normalize('NFC')` + Leader byte 09=`'a'` |
-| ISBD punctuation | Enforced in `authority-grounder` and `vision-to-marc` |
-| Provenance | `$9 AI_QUICKCAT` on every AI-generated subfield |
-| AI resilience | `tenacity` exponential backoff (max 5 retries, params from `config.json`) |
-| Security | All credentials via environment variables — never in `config.json` |
-| HITL | All AI-generated changes displayed as diff before any file write |
-| Undo | Every edit logged to `.quickcat.log` transaction journal |
-
----
-
-## Project Structure
-
-```
-QuickCat/
-├── config.json                    # Runtime configuration (servers, thresholds, mappings)
-├── requirements.txt
-├── SKILLS-OVERVIEW.md             # Full workflow guide and skill index
-├── skills/
-│   ├── copy-cataloger/            # Z39.50 + SRU harvester + consensus engine
-│   ├── vision-to-marc/            # Claude Vision → MARC
-│   ├── authority-grounder/        # id.loc.gov authority validation
-│   ├── brief-to-full-enhancer/    # Claude-generated 520/505 fields
-│   ├── batch-cleaner/             # Tag deletion + Unicode normalization
-│   ├── marc-importer/             # ISO-2709 / Excel import pipeline
-│   ├── record-rollback/           # Transaction journal undo
-│   ├── url-checker/               # 856 $u link validation
-│   └── marc-exporter/             # ISO-2709 export + metrics
-└── shared-resources/
-    ├── scripts/                   # parse_marc.py, transaction_log.py, normalize_dates.py
-    ├── references/                # marc-fields.md, validation-rules.json, crosswalk.json
-    └── templates/                 # marc-templates.json (Book / E-book / Journal)
-```
+See **[SKILLS-OVERVIEW.md](SKILLS-OVERVIEW.md)** for full workflow scenarios,
+technical standards, shared resource reference, and configuration details.
 
 ---
 

@@ -15,17 +15,14 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "shared-resources" / "scripts"))
 import quickcat_loader                      # noqa: F401  – registers shared-resources aliases
 quickcat_loader.register_copy_cataloger()   # registers harvest_metadata + audit_consensus
 
 from skills.copy_cataloger.scripts.harvest_metadata import harvest_metadata  # noqa: E402
-from skills.copy_cataloger.scripts.audit_consensus import _parse_marcxml_string  # noqa: E402
-
-
-def _load_config() -> dict:
-    with open(ROOT / "config.json") as f:
-        return json.load(f)
+from skills.copy_cataloger.scripts.audit_consensus import _parse_marcxml_string, _field_value  # noqa: E402
+from shared_resources.scripts.config_loader import load_config  # noqa: E402
+from shared_resources.scripts.marc_utils import similarity  # noqa: E402
 
 
 async def resolve_tie_breaker(
@@ -44,7 +41,7 @@ async def resolve_tie_breaker(
           - 'resolved': list of { tag, winning_value, source } for resolved conflicts
           - 'unresolved': list of tags still needing manual review
     """
-    cfg = _load_config()
+    cfg = load_config()
     juror_key = cfg["consensus"]["tie_breaker_server"]
 
     print(f"[tie_breaker] Fetching from juror source: {juror_key!r}")
@@ -76,16 +73,13 @@ async def resolve_tie_breaker(
             unresolved.append(tag)
             continue
 
-        juror_val = " ".join(
-            v for i, v in enumerate(juror_fields[0].subfields) if i % 2 == 1
-        ).strip()
+        juror_val = _field_value(juror_fields[0])
 
         local_val = conflict.get("local_value", "")
         ref_val = conflict.get("ref_value", "")
 
-        import difflib
-        sim_local = difflib.SequenceMatcher(None, juror_val.lower(), local_val.lower()).ratio() if local_val else 0
-        sim_ref = difflib.SequenceMatcher(None, juror_val.lower(), ref_val.lower()).ratio() if ref_val else 0
+        sim_local = similarity(juror_val, local_val) if local_val else 0
+        sim_ref = similarity(juror_val, ref_val) if ref_val else 0
 
         if sim_local >= sim_ref:
             winner = local_val

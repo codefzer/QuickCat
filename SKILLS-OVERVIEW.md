@@ -166,8 +166,12 @@ python3 skills/url-checker/scripts/check_856.py acquisitions_import_ready.mrc
 ```
 shared-resources/
 ├── scripts/
+│   ├── quickcat_loader.py      # Bootstrap — registers all cross-package import aliases
+│   ├── config_loader.py        # Cached loaders: load_config(), load_servers(), load_validation_rules()
+│   ├── marc_io.py              # read_mrc() / write_mrc() — shared binary MARC I/O
+│   ├── marc_utils.py           # nfc() NFC normalizer, similarity() string scorer
 │   ├── parse_marc.py           # MARC binary/XML → standardized JSON
-│   ├── transaction_log.py      # Before/after snapshot journal (undo support)
+│   ├── transaction_log.py      # Before/after snapshot journal + clone_record() + purge_log()
 │   └── normalize_dates.py      # Date normalization utilities
 ├── references/
 │   ├── marc-fields.md          # MARC 21 field reference

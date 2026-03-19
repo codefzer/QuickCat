@@ -10,17 +10,21 @@ Outputs one JSON object per line (newline-delimited JSON).
 import argparse
 import json
 import sys
-import unicodedata
 from pathlib import Path
 
 import pymarc
 
+try:
+    from marc_utils import nfc as _clean  # available when loaded via quickcat_loader
+except ImportError:
+    # Standalone execution: define the helper locally (identical to marc_utils.nfc)
+    import unicodedata
 
-def _clean(value: str | None) -> str | None:
-    """Apply NFC normalization and strip whitespace."""
-    if value is None:
-        return None
-    return unicodedata.normalize("NFC", value).strip()
+    def _clean(value: str | None) -> str | None:  # type: ignore[misc]
+        """Apply NFC normalization and strip whitespace."""
+        if value is None:
+            return None
+        return unicodedata.normalize("NFC", value).strip()
 
 
 def record_to_dict(record: pymarc.Record) -> dict:

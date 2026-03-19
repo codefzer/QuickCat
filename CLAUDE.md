@@ -33,8 +33,12 @@ pytest -v
 
 ```
 QuickCat/
-├── shared-resources/         # Core utilities (no external deps)
+├── shared-resources/         # Core utilities (stdlib + pymarc only)
 │   └── scripts/
+│       ├── quickcat_loader.py    # Bootstrap — registers all cross-package imports
+│       ├── config_loader.py      # Cached JSON config loaders (config.json, servers.json, validation-rules.json)
+│       ├── marc_io.py            # read_mrc() / write_mrc() helpers
+│       ├── marc_utils.py         # nfc() NFC normalizer, similarity() scorer
 │       ├── normalize_dates.py
 │       ├── parse_marc.py
 │       └── transaction_log.py
@@ -51,7 +55,7 @@ QuickCat/
 │   ├── conftest.py          # Module shim + fixtures
 │   ├── (unit tests by skill)
 │   └── integration/          # End-to-end pipeline tests
-├── quickcat_loader.py        # Bootstrap module (solves hyphen/underscore imports)
+├── shared-resources/scripts/quickcat_loader.py  # Bootstrap module (solves hyphen/underscore imports)
 ├── pyproject.toml            # Pytest configuration
 └── requirements.txt
 ```
@@ -78,7 +82,7 @@ QuickCat uses a 4-layer architecture to minimize startup overhead:
 
 | Layer | When Loaded | Dependencies | Use Case |
 |-------|------------|--------------|----------|
-| **Eager** | On `import quickcat_loader` | stdlib only | All scripts need this |
+| **Eager** | On `import quickcat_loader` | stdlib + pymarc | All scripts need this |
 | **register_copy_cataloger()** | On demand | httpx, tenacity | Metadata harvest/consensus |
 | **register_tie_breaker()** | On demand | (calls copy_cataloger) | Conflict resolution |
 | **register_batch_cleaner()** | On demand | pymarc | Record cleaning |
@@ -99,14 +103,14 @@ from skills.batch_cleaner.scripts.batch_clean import clean_record
 ### Quick Start
 
 ```bash
-pytest -v                                    # Run all 127 tests
-pytest tests/ --ignore=tests/integration/    # Unit tests only (120)
+pytest -v                                    # Run all 146 tests
+pytest tests/ --ignore=tests/integration/    # Unit tests only (139)
 pytest tests/integration/ -v                 # Integration tests only (7)
 ```
 
 ### Test Structure
 
-- **Unit Tests (120)**: Isolated tests for each module in `tests/*/test_*.py`
+- **Unit Tests (139)**: Isolated tests for each module in `tests/*/test_*.py`
 - **Integration Tests (7)**: End-to-end pipeline tests in `tests/integration/`
 
 ### Key Testing Insights
@@ -131,7 +135,7 @@ This allows test files to use normal imports like `import import_pipeline` even 
 QuickCat uses **lazy loading** to avoid unnecessary dependencies:
 
 - **Eager layer** (always loaded):
-  - `normalize_dates`, `transaction_log`, `parse_marc` (stdlib only)
+  - `normalize_dates`, `transaction_log`, `parse_marc`, `config_loader`, `marc_io`, `marc_utils` (stdlib + pymarc)
 
 - **On-demand layers** (loaded when needed):
   - `register_copy_cataloger()` – heavy: httpx, tenacity
@@ -159,7 +163,7 @@ Scripts only load what they need. Tests verify this isolation (see `test_import_
 
 | Skill | Tests | Focus |
 |-------|-------|-------|
-| shared_resources | 21 | Date normalization, MARC parsing, revision log |
+| shared_resources | 34 | Config loading, MARC I/O, utils, date normalization, MARC parsing, revision log |
 | copy_cataloger | 17 | ISBN/LCCN validation, metadata consensus |
 | batch_cleaner | 11 | Record sanitization, field deletion, org codes |
 | brief_to_full_enhancer | 10 | AI-powered summaries, field stamping |
@@ -169,7 +173,7 @@ Scripts only load what they need. Tests verify this isolation (see `test_import_
 | vision_to_marc | 6 | OCR → MARC conversion, template application |
 | record_rollback | 5 | Revision log parsing, record restoration |
 | **Integration** | **7** | Full pipeline workflows, output validation |
-| **TOTAL** | **127** | **Comprehensive coverage** |
+| **TOTAL** | **146** | **Comprehensive coverage** |
 
 ### Adding New Tests
 

@@ -12,7 +12,6 @@ import argparse
 import base64
 import json
 import sys
-import unicodedata
 from pathlib import Path
 from typing import Optional
 
@@ -22,10 +21,12 @@ from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 ROOT = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "shared-resources" / "scripts"))
 import quickcat_loader          # noqa: F401  – registers cross-package import aliases
 
 from shared_resources.scripts.transaction_log import log_edit  # noqa: E402
+from shared_resources.scripts.marc_utils import nfc  # noqa: E402
+from shared_resources.scripts.marc_io import write_mrc  # noqa: E402
 
 
 VISION_PROMPT = """You are a professional library cataloger. Examine this title page image and extract
@@ -64,12 +65,6 @@ class MarcFields(BaseModel):
     date: Optional[str] = None
     pagination: Optional[str] = None
     isbn: Optional[str] = None
-
-
-def _nfc(s: str | None) -> str | None:
-    if s is None:
-        return None
-    return unicodedata.normalize("NFC", s).strip()
 
 
 @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=1, max=30))
@@ -135,7 +130,7 @@ def _build_record(fields: MarcFields, material_type: str) -> pymarc.Record:
 
     # 100 — Main Author
     if fields.author_main:
-        author = _nfc(fields.author_main)
+        author = nfc(fields.author_main)
         # Ensure trailing comma/period for ISBD
         if not author.endswith((".","," , "-")):
             author += ","
@@ -146,9 +141,9 @@ def _build_record(fields: MarcFields, material_type: str) -> pymarc.Record:
         ))
 
     # 245 — Title Statement
-    title_a = _nfc(fields.title) or "Title not determined"
-    title_b = _nfc(fields.subtitle)
-    title_c = _nfc(fields.statement_of_responsibility)
+    title_a = nfc(fields.title) or "Title not determined"
+    title_b = nfc(fields.subtitle)
+    title_c = nfc(fields.statement_of_responsibility)
 
     subs_245 = ["a", title_a]
     if title_b:
@@ -177,17 +172,17 @@ def _build_record(fields: MarcFields, material_type: str) -> pymarc.Record:
         record.add_field(pymarc.Field(
             tag="250",
             indicators=[" ", " "],
-            subfields=stamp(["a", _nfc(fields.edition) + "."]),
+            subfields=stamp(["a", nfc(fields.edition) + "."]),
         ))
 
     # 264 — Production/Publication
     pub_subs = []
     if fields.place_of_publication:
-        pub_subs += ["a", _nfc(fields.place_of_publication) + " :"]
+        pub_subs += ["a", nfc(fields.place_of_publication) + " :"]
     if fields.publisher:
-        pub_subs += ["b", _nfc(fields.publisher) + ","]
+        pub_subs += ["b", nfc(fields.publisher) + ","]
     if fields.date:
-        pub_subs += ["c", _nfc(fields.date) + "."]
+        pub_subs += ["c", nfc(fields.date) + "."]
     if pub_subs:
         record.add_field(pymarc.Field(
             tag="264",
@@ -202,7 +197,7 @@ def _build_record(fields: MarcFields, material_type: str) -> pymarc.Record:
         record.add_field(pymarc.Field(
             tag="300",
             indicators=[" ", " "],
-            subfields=stamp(["a", _nfc(pages) + "."]),
+            subfields=stamp(["a", nfc(pages) + "."]),
         ))
 
     # 020 — ISBN
@@ -288,10 +283,7 @@ def main():
         changes=[f"Created from image: {image_path.name}"],
     )
 
-    with open(out_path, "wb") as f:
-        writer = pymarc.MARCWriter(f)
-        writer.write(record)
-        writer.close()
+    write_mrc([record], out_path)
 
     # JSON sidecar
     json_path = out_path.with_suffix(".json")

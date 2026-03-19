@@ -102,8 +102,8 @@ def test_rollback_returns_none_for_unmatched_timestamp(tmp_path):
 # ─── purge_log ────────────────────────────────────────────────────────────────
 
 def test_purge_log_no_log_file_returns_zero(tmp_path):
-    mrc = str(tmp_path / "records.mrc")
-    removed = tl.purge_log(mrc)
+    log_file = tmp_path / ".quickcat.log"
+    removed = tl.purge_log(log_file)
     assert removed == 0
 
 
@@ -115,7 +115,7 @@ def test_purge_log_deletes_entire_log_when_no_keep_days(tmp_path):
     log_file = tmp_path / ".quickcat.log"
     assert log_file.exists()
 
-    removed = tl.purge_log(mrc, keep_days=None)
+    removed = tl.purge_log(log_file, keep_days=None)
 
     assert removed == 2
     assert not log_file.exists()
@@ -125,8 +125,9 @@ def test_purge_log_returns_zero_when_all_entries_within_keep_days(tmp_path):
     mrc = str(tmp_path / "records.mrc")
     rec = _make_record()
     tl.log_edit("skill", rec, rec, mrc_path=mrc)
+    log_file = tmp_path / ".quickcat.log"
 
-    removed = tl.purge_log(mrc, keep_days=90)
+    removed = tl.purge_log(log_file, keep_days=90)
 
     assert removed == 0
     # File still exists with the entry intact
@@ -164,7 +165,7 @@ def test_purge_log_removes_old_entries_and_keeps_recent(tmp_path):
         f.write(json.dumps(old_entry) + "\n")
         f.write(json.dumps(new_entry) + "\n")
 
-    removed = tl.purge_log(mrc, keep_days=90)
+    removed = tl.purge_log(log_file, keep_days=90)
 
     assert removed == 1
     remaining = tl.list_revisions("001:ocn999", mrc_path=mrc)
@@ -181,3 +182,29 @@ def test_record_round_trip_preserves_fields(sample_record):
     original_tags = sorted(f.tag for f in sample_record.fields)
     restored_tags = sorted(f.tag for f in restored.fields)
     assert original_tags == restored_tags
+
+
+# ─── clone_record ─────────────────────────────────────────────────────────────
+
+def test_clone_record_is_different_object(sample_record):
+    cloned = tl.clone_record(sample_record)
+    assert cloned is not sample_record
+
+
+def test_clone_record_preserves_leader_and_fields(sample_record):
+    cloned = tl.clone_record(sample_record)
+    assert cloned.leader == sample_record.leader
+    original_tags = sorted(f.tag for f in sample_record.fields)
+    cloned_tags = sorted(f.tag for f in cloned.fields)
+    assert cloned_tags == original_tags
+
+
+def test_clone_record_is_independent_from_original():
+    """Mutating a field in the clone must not affect the source record."""
+    record = _make_record("ocn456")
+    cloned = tl.clone_record(record)
+    # Mutate a subfield in the clone's 245
+    cloned["245"].subfields[1] = "MUTATED"
+    assert record["245"]["a"] == "Test title", (
+        "Mutation of cloned field bled back into the original"
+    )

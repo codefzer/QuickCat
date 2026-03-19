@@ -125,33 +125,43 @@ def list_revisions(record_id: str, mrc_path: str = ".") -> list[dict]:
 
 
 def clone_record(record: pymarc.Record) -> pymarc.Record:
-    """Return a copy of a Record for before/after transaction snapshots.
+    """Return an independent copy of a Record for before/after transaction snapshots.
+
+    Each Field is reconstructed so that mutations through the clone cannot
+    affect the original record and vice-versa.
 
     Args:
         record: The pymarc Record to copy.
 
     Returns:
-        A new pymarc.Record with the same leader and fields.
+        A new pymarc.Record with the same leader and freshly constructed fields.
     """
     copy = pymarc.Record()
     copy.leader = record.leader
     for field in record.fields:
-        copy.add_field(field)
+        if hasattr(field, "data"):
+            copy.add_field(pymarc.Field(tag=field.tag, data=field.data))
+        else:
+            copy.add_field(pymarc.Field(
+                tag=field.tag,
+                indicators=[field.indicator1, field.indicator2],
+                subfields=list(field.subfields),
+            ))
     return copy
 
 
-def purge_log(mrc_path: str, keep_days: int | None = None) -> int:
+def purge_log(log_path: str | Path, keep_days: int | None = None) -> int:
     """Remove entries from the transaction log.
 
     Args:
-        mrc_path: Path to the .mrc file (used to locate the log).
+        log_path: Direct path to the .quickcat.log file to purge.
         keep_days: If given, remove only entries older than this many days.
                    If None, delete the entire log file.
 
     Returns:
         Number of entries removed.
     """
-    log_file = _log_path(mrc_path)
+    log_file = Path(log_path)
     if not log_file.exists():
         return 0
 
@@ -211,10 +221,8 @@ def rollback(record_id: str, timestamp: str, mrc_path: str) -> pymarc.Record | N
 
     ts_short = timestamp.replace(":", "").replace("-", "")[:15]
     out_path = Path(mrc_path).parent / f"{Path(mrc_path).stem}_rollback_{ts_short}.mrc"
-    with open(out_path, "wb") as out_file:
-        writer = pymarc.MARCWriter(out_file)
-        writer.write(restored)
-        writer.close()
+    from marc_io import write_mrc  # deferred: marc_io is registered after transaction_log
+    write_mrc([restored], out_path)
 
     print(f"[rollback] Restored record {record_id!r} to state at {timestamp}")
     print(f"[rollback] Written to: {out_path}")

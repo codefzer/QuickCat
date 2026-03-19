@@ -30,7 +30,7 @@ import sys
 import types
 from pathlib import Path
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).parent.parent.parent
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ def _alias(dotted: str, short: str) -> None:
     sys.modules[dotted] = mod
 
 
-# ── Eager layer: shared-resources only (stdlib-weight, no third-party libs) ───
+# ── Eager layer: shared-resources only (stdlib + pymarc; no heavy third-party libs) ───
 _reg("normalize_dates", ROOT / "shared-resources/scripts/normalize_dates.py")
 _reg("transaction_log", ROOT / "shared-resources/scripts/transaction_log.py")
 _reg("parse_marc",      ROOT / "shared-resources/scripts/parse_marc.py")

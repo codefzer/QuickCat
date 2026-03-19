@@ -7,22 +7,19 @@ Usage:
 
 import json
 import re
-import unicodedata
 from pathlib import Path
 
 import pandas as pd
 import pymarc
 
+from shared_resources.scripts.config_loader import load_config  # registered before excel_to_marc
+from shared_resources.scripts.marc_utils import nfc as _nfc_base  # likewise
+
 ROOT = Path(__file__).parent.parent.parent.parent
 
 
-def _load_config() -> dict:
-    with open(ROOT / "config.json") as f:
-        return json.load(f)
-
-
 def _load_crosswalk() -> dict:
-    cfg = _load_config()
+    cfg = load_config()
     # crosswalk lives in shared-resources/references/
     cw_path = ROOT / "shared-resources" / "references" / "crosswalk.json"
     with open(cw_path) as f:
@@ -35,12 +32,10 @@ def _load_templates() -> dict:
 
 
 def _nfc(s) -> str | None:
+    """NFC-normalise a value that may be a pandas NaN float or an empty string."""
     if s is None or (isinstance(s, float) and str(s) == "nan"):
         return None
-    s = str(s).strip()
-    if not s:
-        return None
-    return unicodedata.normalize("NFC", s)
+    return _nfc_base(str(s)) or None  # _nfc_base strips; empty → falsy → None
 
 
 def _invert_name(name: str) -> str:
@@ -175,7 +170,7 @@ def excel_to_records(
 
     Returns (records, report) where report is a list of per-row dicts with warnings/errors.
     """
-    cfg = _load_config()
+    cfg = load_config()
     aliases = cfg.get("column_aliases", {})
     crosswalk = _load_crosswalk()
     templates = _load_templates()

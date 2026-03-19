@@ -27,7 +27,7 @@ python3 skills/batch-cleaner/scripts/batch_clean.py input.mrc --org-code MYLIB -
 Steps performed automatically:
 
 1. **Load profile** — Read tag deletion list and org code from JSON profile.
-2. **Iterate records** — Process each record with `pymarc.MARCReader`.
+2. **Iterate records** — Read all records from the binary file with `read_mrc()`.
 3. **Delete tags** — Remove all fields matching the profile tag list (9XX deleted by range).
 4. **Unicode NFC** — Apply `unicodedata.normalize('NFC', ...)` to all field data.
 5. **Leader byte 09** — Set to `'a'` (Unicode/UTF-8 flag).

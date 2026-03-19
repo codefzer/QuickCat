@@ -20,10 +20,11 @@ from pathlib import Path
 import pymarc
 
 ROOT = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "shared-resources" / "scripts"))
 import quickcat_loader          # noqa: F401  – registers cross-package import aliases
 
-from shared_resources.scripts.transaction_log import log_edit  # noqa: E402
+from shared_resources.scripts.transaction_log import log_edit, clone_record  # noqa: E402
+from shared_resources.scripts.marc_io import read_mrc, write_mrc  # noqa: E402
 
 
 DEFAULT_PROFILE_PATH = Path(__file__).parent.parent / "assets" / "default-profile.json"
@@ -150,43 +151,31 @@ def main():
     )
 
     cleaned_records = []
-    with open(args.mrc_file, "rb") as f:
-        reader = pymarc.MARCReader(f, to_unicode=True, force_utf8=True)
-        for rec in reader:
-            if not rec:
-                continue
+    for rec in read_mrc(args.mrc_file):
+        before = clone_record(rec)
 
-            before = pymarc.Record()
-            before.leader = rec.leader
-            for field in rec.fields:
-                before.add_field(field)
+        cleaned, stats = clean_record(rec, delete_tags, delete_ranges, org_code)
+        total_stats["processed"] += 1
+        total_stats["fields_deleted"] += stats["fields_deleted"]
+        for tag, count in stats["tags_deleted"].items():
+            total_stats["tags_deleted"][tag] += count
+        total_stats["unicode_fixes"] += stats["unicode_fixes"]
+        if stats["leader_fixed"]:
+            total_stats["leader_fixed"] += 1
 
-            cleaned, stats = clean_record(rec, delete_tags, delete_ranges, org_code)
-            total_stats["processed"] += 1
-            total_stats["fields_deleted"] += stats["fields_deleted"]
-            for tag, count in stats["tags_deleted"].items():
-                total_stats["tags_deleted"][tag] += count
-            total_stats["unicode_fixes"] += stats["unicode_fixes"]
-            if stats["leader_fixed"]:
-                total_stats["leader_fixed"] += 1
+        changes = []
+        if stats["fields_deleted"]:
+            changes.append(f"Deleted {stats['fields_deleted']} fields: {dict(stats['tags_deleted'])}")
+        if stats["unicode_fixes"]:
+            changes.append(f"NFC normalized {stats['unicode_fixes']} subfields")
+        if stats["leader_fixed"]:
+            changes.append("Leader byte 09 set to 'a' (Unicode)")
+        changes.append(f"003 stamped: {org_code}")
 
-            changes = []
-            if stats["fields_deleted"]:
-                changes.append(f"Deleted {stats['fields_deleted']} fields: {dict(stats['tags_deleted'])}")
-            if stats["unicode_fixes"]:
-                changes.append(f"NFC normalized {stats['unicode_fixes']} subfields")
-            if stats["leader_fixed"]:
-                changes.append("Leader byte 09 set to 'a' (Unicode)")
-            changes.append(f"003 stamped: {org_code}")
+        log_edit("batch-cleaner", before, cleaned, str(out_path), changes)
+        cleaned_records.append(cleaned)
 
-            log_edit("batch-cleaner", before, cleaned, str(out_path), changes)
-            cleaned_records.append(cleaned)
-
-    with open(out_path, "wb") as f:
-        writer = pymarc.MARCWriter(f)
-        for rec in cleaned_records:
-            writer.write(rec)
-        writer.close()
+    write_mrc(cleaned_records, out_path)
 
     # Print summary
     print(f"\n[batch_cleaner] Processed:      {total_stats['processed']} records")

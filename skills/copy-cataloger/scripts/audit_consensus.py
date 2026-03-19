@@ -15,7 +15,6 @@ Usage:
 """
 
 import argparse
-import difflib
 import json
 import sys
 from pathlib import Path
@@ -23,15 +22,14 @@ from pathlib import Path
 import pymarc
 
 ROOT = Path(__file__).parent.parent.parent.parent
+sys.path.insert(0, str(ROOT / "shared-resources" / "scripts"))
+import quickcat_loader  # noqa: F401  – registers shared-resources aliases
+
+from shared_resources.scripts.config_loader import load_config  # noqa: E402
+from shared_resources.scripts.marc_utils import similarity  # noqa: E402
 
 
-def _load_config() -> dict:
-    with open(ROOT / "config.json") as f:
-        return json.load(f)
-
-
-def _load_priority_rules() -> dict:
-    cfg = _load_config()
+def _load_priority_rules(cfg: dict) -> dict:
     rules_path = ROOT / cfg["priority_rules"]
     with open(rules_path) as f:
         return json.load(f)
@@ -58,10 +56,6 @@ def _field_value(field: pymarc.Field) -> str:
         for i, v in enumerate(field.subfields)
         if i % 2 == 1  # odd indices are values
     )
-
-
-def _similarity(a: str, b: str) -> float:
-    return difflib.SequenceMatcher(None, a.lower(), b.lower()).ratio()
 
 
 def _is_local_priority(tag: str, priority_rules: dict) -> bool:
@@ -93,8 +87,8 @@ def audit_consensus(
         List of ConflictItem dicts sorted by severity_score descending.
         Each item: { tag, local_value, ref_value, severity_score, recommendation }
     """
-    cfg = _load_config()
-    rules = _load_priority_rules()
+    cfg = load_config()
+    rules = _load_priority_rules(cfg)
     sim_threshold = threshold or cfg["consensus"]["similarity_threshold"]
 
     # Tags we compare for intellectual content
@@ -150,9 +144,9 @@ def audit_consensus(
         if lv == rv:
             continue  # Identical — no conflict
 
-        similarity = _similarity(lv, rv)
+        sim_score = similarity(lv, rv)
         # Severity is inverse of similarity: very different = high severity
-        severity = round(1.0 - similarity, 3)
+        severity = round(1.0 - sim_score, 3)
 
         if severity < 0.3:
             status = "green"

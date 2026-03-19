@@ -10,7 +10,6 @@ Usage:
 
 import argparse
 import asyncio
-import json
 import sys
 from io import BytesIO
 from pathlib import Path
@@ -20,16 +19,10 @@ import pymarc
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 ROOT = Path(__file__).parent.parent.parent.parent
+sys.path.insert(0, str(ROOT / "shared-resources" / "scripts"))
+import quickcat_loader  # noqa: F401  – registers shared-resources aliases
 
-
-def _load_config() -> dict:
-    with open(ROOT / "config.json") as f:
-        return json.load(f)
-
-
-def _load_servers() -> dict:
-    with open(ROOT / "servers.json") as f:
-        return json.load(f)
+from shared_resources.scripts.config_loader import load_config, load_servers  # noqa: E402
 
 
 # ─── SRU harvest ─────────────────────────────────────────────────────────────
@@ -135,8 +128,8 @@ async def harvest_metadata(identifier: str, source_key: str) -> str:
         MARCXML collection string, or one of:
         'Record Not Found', 'Protocol Timeout', 'Authentication Failure'
     """
-    cfg = _load_config()
-    servers = _load_servers()
+    cfg = load_config()
+    servers = load_servers()
     if source_key not in servers:
         return f"Authentication Failure: unknown source_key {source_key!r}"
 
@@ -186,8 +179,8 @@ def main():
 
     if args.test:
         print("[harvest_metadata] --test: verifying config.json loads...")
-        _load_config()
-        print(f"  Configured sources: {list(_load_servers().keys())}")
+        load_config()
+        print(f"  Configured sources: {list(load_servers().keys())}")
         print("  OK")
         return
 

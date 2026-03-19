@@ -9,7 +9,6 @@ Usage:
 import argparse
 import json
 import sys
-import unicodedata
 from pathlib import Path
 
 import anthropic
@@ -17,10 +16,12 @@ import pymarc
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 ROOT = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "shared-resources" / "scripts"))
 import quickcat_loader          # noqa: F401  – registers cross-package import aliases
 
-from shared_resources.scripts.transaction_log import log_edit  # noqa: E402
+from shared_resources.scripts.transaction_log import log_edit, clone_record  # noqa: E402
+from shared_resources.scripts.marc_utils import nfc  # noqa: E402
+from shared_resources.scripts.marc_io import read_mrc, write_mrc  # noqa: E402
 
 
 ENHANCE_PROMPT = """You are a professional library cataloger writing MARC bibliographic notes.
@@ -49,12 +50,6 @@ Rules:
 - No markdown, no HTML, plain text only"""
 
 
-def _nfc(s: str | None) -> str | None:
-    if s is None:
-        return None
-    return unicodedata.normalize("NFC", s).strip()
-
-
 @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=1, max=30))
 def _call_claude(prompt: str) -> dict:
     """Call Claude API and return parsed JSON response."""
@@ -77,7 +72,7 @@ def _build_context(record: pymarc.Record) -> dict:
     def first(tag: str, subfield: str = "a") -> str:
         f = record[tag]
         val = f[subfield] if f else None
-        return _nfc(val) or ""
+        return nfc(val) or ""
 
     title_field = record["245"]
     title = ""
@@ -96,7 +91,7 @@ def _build_context(record: pymarc.Record) -> dict:
     subjects = []
     for tag in ("650", "651", "600", "655"):
         for f in record.get_fields(tag):
-            subj = _nfc(f["a"])
+            subj = nfc(f["a"])
             if subj:
                 subjects.append(subj.strip("."))
 
@@ -136,7 +131,7 @@ def enhance_record(
         if record["520"] and not force:
             print("[enhancer] 520 already present — skipping (use --force to overwrite)")
         else:
-            summary = _nfc(generated.get("summary_520", ""))
+            summary = nfc(generated.get("summary_520", ""))
             if summary:
                 if record["520"] and force:
                     record.remove_field(record["520"])
@@ -148,7 +143,7 @@ def enhance_record(
                 changes.append(f"520 generated: {summary[:60]}...")
 
     if "505" in fields_to_add:
-        contents = _nfc(generated.get("contents_505"))
+        contents = nfc(generated.get("contents_505"))
         if not contents:
             print("[enhancer] 505 not generated (material type may not warrant a contents note)")
         elif record["505"] and not force:
@@ -191,12 +186,7 @@ def main():
         sys.exit(1)
 
     fields_to_add = [f.strip() for f in args.fields.split(",")]
-    records = []
-    with open(args.mrc_file, "rb") as f:
-        reader = pymarc.MARCReader(f, to_unicode=True, force_utf8=True)
-        for rec in reader:
-            if rec:
-                records.append(rec)
+    records = read_mrc(args.mrc_file)
 
     if not records:
         print("ERROR: no records found", file=sys.stderr)
@@ -211,11 +201,7 @@ def main():
         ctx = _build_context(rec)
         print(f"\n[enhancer] Record {i}: {ctx['title']!r} / {ctx['author']!r}")
 
-        before = pymarc.Record()
-        before.leader = rec.leader
-        for f in rec.fields:
-            before.add_field(f)
-
+        before = clone_record(rec)
         updated, changes = enhance_record(rec, fields_to_add, args.force)
         all_changes.extend(changes)
 
@@ -240,11 +226,7 @@ def main():
     out_path = Path(args.out) if args.out else Path(args.mrc_file).with_stem(
         Path(args.mrc_file).stem + "_enhanced"
     )
-    with open(out_path, "wb") as f:
-        writer = pymarc.MARCWriter(f)
-        for rec in updated_records:
-            writer.write(rec)
-        writer.close()
+    write_mrc(updated_records, out_path)
 
     print(f"\n[enhancer] Written: {out_path}")
     print(f"[enhancer] Changes: {len(all_changes)}")

@@ -32,9 +32,9 @@ Steps performed automatically:
 
 1. **Detect format** — ISO-2709 binary or Excel (.xlsx/.csv) based on file extension.
 2. **Parse input** — Read all records/rows.
-3. **Excel → MARC** — Map column headers using `crosswalk.json` + `config.json` aliases.
+3. **Excel → MARC** — Map column headers using `shared-resources/references/crosswalk.json` + `config.json` aliases.
 4. **Apply cleaner** — Run batch-cleaner profile (tag deletion, Unicode NFC, Leader byte).
-5. **Validate** — Check required fields (001, 245, 008) against `validation-rules.json`.
+5. **Validate** — Check required fields (001, 245, 008) against `shared-resources/references/validation-rules.json`.
 6. **Output** — `{stem}_import_ready.mrc` + summary report.
 
 ## Excel Column Mapping
@@ -56,3 +56,11 @@ Unrecognized columns are logged as warnings — partial imports succeed.
 
 - `{stem}_import_ready.mrc` — Cleaned, validated records
 - `{stem}_import_report.json` — Per-record status: valid/warning/error
+
+## Shared Dependencies
+
+| File | Purpose |
+|------|---------|
+| `shared-resources/references/crosswalk.json` | DC→MARC and Excel column→MARC field mappings |
+| `shared-resources/references/validation-rules.json` | Required fields (001, 245, 008) and format rules |
+| `skills/batch-cleaner/assets/default-profile.json` | Default tag deletion profile (customize org_code) |
